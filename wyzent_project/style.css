@@ -1023,11 +1023,11 @@ html {
     }
     
     .carousel-wrapper {
-        margin: 0 45px;
+        margin: 0 10px;
     }
 
     .carousel-track {
-        gap: 15px;
+        gap: 10px;
     }
     
     .reel-card {
@@ -1040,8 +1040,8 @@ html {
     }
     
     .carousel-btn {
-        width: 40px;
-        height: 40px;
+        width: 30px;
+        height: 30px;
         font-size: 0.9rem;
     }
     

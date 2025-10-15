@@ -71,7 +71,7 @@ if (statsSection) {
     statsObserver.observe(statsSection);
 }
 
-// Carousel Functionality
+// Carousel Functionality with Touch Swipe
 const carouselTrack = document.getElementById('carouselTrack');
 const prevBtn = document.getElementById('prevBtn');
 const nextBtn = document.getElementById('nextBtn');
@@ -80,42 +80,42 @@ const reelCards = document.querySelectorAll('.reel-card');
 let currentIndex = 0;
 const totalCards = reelCards.length;
 
-function getCardsPerView() {
-    const containerWidth = document.querySelector('.carousel-wrapper')?.offsetWidth || window.innerWidth - 160;
-    const cardWidth = 320;
-    const gap = 30;
-    const possibleCards = Math.floor((containerWidth + gap) / (cardWidth + gap));
-    return Math.max(1, Math.min(possibleCards, totalCards));
-}
+// Touch swipe variables
+let touchStartX = 0;
+let touchEndX = 0;
+let isDragging = false;
+let startTransform = 0;
 
-function updateCarousel() {
+function updateCarousel(smooth = true) {
     if (!carouselTrack || totalCards === 0) return;
     
-    const cardsPerView = getCardsPerView();
     const cardWidth = 320;
     const gap = 30;
     const offset = currentIndex * (cardWidth + gap);
     
+    if (smooth) {
+        carouselTrack.style.transition = 'transform 0.5s ease';
+    } else {
+        carouselTrack.style.transition = 'none';
+    }
+    
     carouselTrack.style.transform = `translateX(-${offset}px)`;
     
-    // Calculate max index to ensure last card is fully visible
-    const maxIndex = Math.max(0, totalCards - cardsPerView);
+    // Calculate max index
+    const maxIndex = Math.max(0, totalCards - 1);
     
-    // Hide buttons if all cards fit in view
-    const shouldShowButtons = totalCards > cardsPerView;
-    
+    // Update button states
     if (prevBtn) {
-        prevBtn.style.display = shouldShowButtons ? 'flex' : 'none';
         prevBtn.disabled = currentIndex === 0;
         prevBtn.style.opacity = currentIndex === 0 ? '0.3' : '1';
     }
     if (nextBtn) {
-        nextBtn.style.display = shouldShowButtons ? 'flex' : 'none';
         nextBtn.disabled = currentIndex >= maxIndex;
         nextBtn.style.opacity = currentIndex >= maxIndex ? '0.3' : '1';
     }
 }
 
+// Button navigation - move one card at a time
 if (prevBtn) {
     prevBtn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -131,8 +131,7 @@ if (nextBtn) {
     nextBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const cardsPerView = getCardsPerView();
-        const maxIndex = Math.max(0, totalCards - cardsPerView);
+        const maxIndex = Math.max(0, totalCards - 1);
         if (currentIndex < maxIndex) {
             currentIndex++;
             updateCarousel();
@@ -140,9 +139,129 @@ if (nextBtn) {
     });
 }
 
+// Touch swipe functionality
+if (carouselTrack) {
+    // Touch events
+    carouselTrack.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        isDragging = true;
+        const transform = carouselTrack.style.transform;
+        const match = transform.match(/translateX\((-?\d+)px\)/);
+        startTransform = match ? parseInt(match[1]) : 0;
+    });
+
+    carouselTrack.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        
+        touchEndX = e.touches[0].clientX;
+        const diff = touchEndX - touchStartX;
+        const newTransform = startTransform + diff;
+        
+        // Apply drag with resistance at boundaries
+        const maxTransform = 0;
+        const minTransform = -(totalCards - 1) * 350;
+        
+        let finalTransform = newTransform;
+        if (newTransform > maxTransform) {
+            finalTransform = maxTransform + (newTransform - maxTransform) * 0.3;
+        } else if (newTransform < minTransform) {
+            finalTransform = minTransform + (newTransform - minTransform) * 0.3;
+        }
+        
+        carouselTrack.style.transition = 'none';
+        carouselTrack.style.transform = `translateX(${finalTransform}px)`;
+    });
+
+    carouselTrack.addEventListener('touchend', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        const diff = touchEndX - touchStartX;
+        const threshold = 50; // Minimum swipe distance
+        
+        if (Math.abs(diff) > threshold) {
+            if (diff > 0 && currentIndex > 0) {
+                // Swiped right - go to previous
+                currentIndex--;
+            } else if (diff < 0 && currentIndex < totalCards - 1) {
+                // Swiped left - go to next
+                currentIndex++;
+            }
+        }
+        
+        updateCarousel();
+        touchStartX = 0;
+        touchEndX = 0;
+    });
+
+    // Mouse events for desktop drag
+    carouselTrack.addEventListener('mousedown', (e) => {
+        touchStartX = e.clientX;
+        isDragging = true;
+        const transform = carouselTrack.style.transform;
+        const match = transform.match(/translateX\((-?\d+)px\)/);
+        startTransform = match ? parseInt(match[1]) : 0;
+        carouselTrack.style.cursor = 'grabbing';
+        e.preventDefault();
+    });
+
+    carouselTrack.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        
+        touchEndX = e.clientX;
+        const diff = touchEndX - touchStartX;
+        const newTransform = startTransform + diff;
+        
+        // Apply drag with resistance at boundaries
+        const maxTransform = 0;
+        const minTransform = -(totalCards - 1) * 350;
+        
+        let finalTransform = newTransform;
+        if (newTransform > maxTransform) {
+            finalTransform = maxTransform + (newTransform - maxTransform) * 0.3;
+        } else if (newTransform < minTransform) {
+            finalTransform = minTransform + (newTransform - minTransform) * 0.3;
+        }
+        
+        carouselTrack.style.transition = 'none';
+        carouselTrack.style.transform = `translateX(${finalTransform}px)`;
+    });
+
+    carouselTrack.addEventListener('mouseup', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        const diff = touchEndX - touchStartX;
+        const threshold = 50;
+        
+        if (Math.abs(diff) > threshold) {
+            if (diff > 0 && currentIndex > 0) {
+                currentIndex--;
+            } else if (diff < 0 && currentIndex < totalCards - 1) {
+                currentIndex++;
+            }
+        }
+        
+        updateCarousel();
+        carouselTrack.style.cursor = 'grab';
+        touchStartX = 0;
+        touchEndX = 0;
+    });
+
+    carouselTrack.addEventListener('mouseleave', () => {
+        if (isDragging) {
+            isDragging = false;
+            updateCarousel();
+            carouselTrack.style.cursor = 'grab';
+        }
+    });
+
+    // Set initial cursor
+    carouselTrack.style.cursor = 'grab';
+}
+
 // Initialize carousel
 if (carouselTrack && totalCards > 0) {
-    // Small delay to ensure layout is ready
     setTimeout(() => {
         updateCarousel();
     }, 100);
