@@ -396,7 +396,7 @@ const animateOnScroll = new IntersectionObserver((entries) => {
     });
 }, { threshold: 0.1 });
 
-document.querySelectorAll('.stat-card, .reel-card, .growth-text, .cta-box, .ebook-preview, .ebook-details, .starter-preview, .starter-details').forEach(el => {
+document.querySelectorAll('.stat-card, .reel-card, .growth-text, .cta-box, .ebook-preview, .ebook-details, .starter-preview, .starter-details, .testimonial-card').forEach(el => {
     el.style.opacity = '0';
     el.style.transform = 'translateY(30px)';
     el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
